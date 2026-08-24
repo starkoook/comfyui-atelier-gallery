@@ -21,11 +21,8 @@
   gap: 6px;
   min-width: 0;
 }
-.atg-row-top {
-  padding: 7px 8px 4px;
-}
 .atg-row-path {
-  padding: 0 8px 8px;
+  padding: 8px;
 }
 .atg-tabs {
   display: flex;

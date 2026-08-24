@@ -3,13 +3,9 @@ import { app } from "../../scripts/app.js";
 const CSS_URL = new URL("./atelier.css", import.meta.url);
 
 const TIP_COPY = "\u590d\u5236\u63d0\u793a\u8bcd";
-const TIP_SAVE = "\u5b58\u5165\u63d0\u793a\u8bcd\u5e93";
-const TIP_COPY_NEG = "\u590d\u5236\u8d1f\u5411";
 
 const ICO_COPY =
   '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5.2" y="5.2" width="8" height="8" rx="1.6"/><path d="M3.4 10.2V4.2A1.6 1.6 0 0 1 5 2.6h6"/></svg>';
-const ICO_SAVE =
-  '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2.6h8v11.2L8 11.2 4 13.8V2.6z"/></svg>';
 const ICO_FOLDER =
   '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h4.1l1.6 1.8H18a2.5 2.5 0 0 1 2.5 2.5v9.2A2.5 2.5 0 0 1 18 20.5H6A2.5 2.5 0 0 1 3.5 18V6.5z"/></svg>';
 const ICO_UP =
@@ -53,14 +49,6 @@ function folderOf(node) {
 function thumbUrl(folder, filename) {
   const p = new URLSearchParams({ folder: folder || "", filename: filename || "" });
   return `/atelier/file?${p}`;
-}
-
-function toast(text) {
-  if (app.extensionManager?.toast) {
-    app.extensionManager.toast.add({ severity: "info", summary: "Atelier", detail: String(text), life: 2200 });
-    return;
-  }
-  console.log("[Atelier Gallery]", text);
 }
 
 async function copyText(text) {
@@ -120,7 +108,6 @@ function openLightbox(node, item, meta) {
         <div class="atg-lb-actions">
           <button type="button" data-act="copy-p">Copy prompt</button>
           <button type="button" data-act="copy-n">Copy negative</button>
-          <button type="button" data-act="save">Save to vault</button>
         </div>
       </div>
     </div>`;
@@ -131,30 +118,7 @@ function openLightbox(node, item, meta) {
   wrap.querySelector('[data-act="copy-n"]').onclick = async () => {
     if (negative) await copyText(negative);
   };
-  wrap.querySelector('[data-act="save"]').onclick = () => savePrompt(item, meta);
   document.body.appendChild(wrap);
-}
-
-async function savePrompt(item, meta) {
-  if (!meta?.prompt && !meta?.negative) {
-    toast("Nothing to save");
-    return;
-  }
-  try {
-    await fetch("/atelier/prompts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: item.filename.replace(/\.[^.]+$/, ""),
-        prompt: meta.prompt || "",
-        negative: meta.negative || "",
-        filename: item.filename,
-      }),
-    });
-    toast("Saved to vault");
-  } catch (err) {
-    toast(String(err));
-  }
 }
 
 async function selectImage(node, item, openPreview) {
@@ -217,17 +181,14 @@ function renderBrowse(node, data) {
       <div class="name">${esc(item.filename)}</div>
       <div class="atg-actions">
         <button type="button" class="atg-icon" data-act="copy" data-tip="${TIP_COPY}" aria-label="${TIP_COPY}">${ICO_COPY}</button>
-        <button type="button" class="atg-icon" data-act="save" data-tip="${TIP_SAVE}" aria-label="${TIP_SAVE}">${ICO_SAVE}</button>
       </div>`;
     card.addEventListener("click", (e) => {
       const act = e.target.closest("[data-act]")?.dataset?.act;
-      if (act === "copy" || act === "save") {
+      if (act === "copy") {
         e.stopPropagation();
         selectImage(node, item, false).then(async (meta) => {
-          if (act === "copy") {
-            const text = meta.prompt || meta.negative || "";
-            if (text) await copyText(text);
-          } else savePrompt(item, meta);
+          const text = meta.prompt || meta.negative || "";
+          if (text) await copyText(text);
         });
         return;
       }
@@ -250,55 +211,6 @@ async function goPath(node, path) {
   }
 }
 
-async function loadVault(node) {
-  const box = node._atelierVault;
-  try {
-    const data = await getJSON("/atelier/prompts");
-    const items = data.prompts || [];
-    if (!items.length) {
-      box.innerHTML = `<div class="atg-empty">Vault is empty. Save from an image preview.</div>`;
-      return;
-    }
-    box.innerHTML = items
-      .map(
-        (p) => `
-      <div class="atg-vault-item" data-id="${esc(p.id)}">
-        <header>
-          <strong>${esc(p.title || "untitled")}</strong>
-          <span>
-            <button type="button" data-act="copy">Copy</button>
-            <button type="button" data-act="del">Del</button>
-          </span>
-        </header>
-        <p>${esc(p.prompt || p.negative || "")}</p>
-      </div>`
-      )
-      .join("");
-    box.querySelectorAll(".atg-vault-item").forEach((el, i) => {
-      const item = items[i];
-      el.querySelector('[data-act="copy"]').onclick = async () => {
-        const text = item.prompt || item.negative || "";
-        if (text) await copyText(text);
-      };
-      el.querySelector('[data-act="del"]').onclick = async () => {
-        await fetch(`/atelier/prompts?id=${encodeURIComponent(item.id)}`, { method: "DELETE" });
-        loadVault(node);
-      };
-    });
-  } catch (err) {
-    box.innerHTML = `<div class="atg-empty">${esc(err.message || err)}</div>`;
-  }
-}
-
-function showTab(node, name) {
-  node._atelierGrid.style.display = name === "grid" ? "grid" : "none";
-  node._atelierVault.style.display = name === "vault" ? "block" : "none";
-  node._atelierRoot.querySelectorAll(".atg-tab").forEach((b) => {
-    b.classList.toggle("on", b.dataset.tab === name);
-  });
-  if (name === "vault") loadVault(node);
-}
-
 function hideNativeWidgets(node) {
   for (const name of ["folder", "filename"]) {
     const w = widget(node, name);
@@ -315,13 +227,6 @@ function buildWidget(node) {
   root.className = "atg-root";
   root.innerHTML = `
     <div class="atg-chrome">
-      <div class="atg-row atg-row-top">
-        <div class="atg-tabs">
-          <button class="atg-tab on" data-tab="grid" type="button">Files</button>
-          <button class="atg-tab" data-tab="vault" type="button">Prompts</button>
-        </div>
-        <span class="atg-count"></span>
-      </div>
       <div class="atg-row atg-row-path">
         <button class="atg-tool" type="button" data-act="up" data-tip="Up">${ICO_UP}</button>
         <div class="atg-path-wrap">
@@ -329,13 +234,12 @@ function buildWidget(node) {
         </div>
         <button class="atg-tool primary" type="button" data-act="go" data-tip="Open">${ICO_GO}</button>
         <input class="atg-search" type="search" placeholder="Filter" />
+        <span class="atg-count"></span>
       </div>
     </div>
-    <div class="atg-grid"></div>
-    <div class="atg-vault" style="display:none"></div>`;
+    <div class="atg-grid"></div>`;
   node._atelierRoot = root;
   node._atelierGrid = root.querySelector(".atg-grid");
-  node._atelierVault = root.querySelector(".atg-vault");
   const pathInput = root.querySelector(".atg-path");
   const search = root.querySelector("input.atg-search");
   search.addEventListener("input", () => {
@@ -350,9 +254,6 @@ function buildWidget(node) {
     if (node._atelierParent == null) goPath(node, "");
     else goPath(node, node._atelierParent);
   };
-  root.querySelectorAll(".atg-tab").forEach((b) => {
-    b.onclick = () => showTab(node, b.dataset.tab);
-  });
 
   try {
     const dom = node.addDOMWidget("atelier_gallery", "div", root, {
