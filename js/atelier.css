@@ -1,76 +1,155 @@
 .atg-root {
   font-family: Segoe UI, Inter, system-ui, sans-serif;
   color: #e8e8ea;
-  background: #252526;
-  border: 1px solid #1a1a1a;
-  border-radius: 10px;
+  background: #232326;
+  border: 1px solid #141416;
+  border-radius: 8px;
   overflow: hidden;
-  min-width: 360px;
-}
-.atg-bar {
+  min-width: 0;
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+}
+.atg-chrome {
+  flex: 0 0 auto;
+  background: #2b2b2e;
+  border-bottom: 1px solid #141416;
+}
+.atg-row {
+  display: flex;
   align-items: center;
-  padding: 8px 8px 7px;
-  background: linear-gradient(#2d2d30, #262628);
-  border-bottom: 1px solid #171717;
+  gap: 6px;
+  min-width: 0;
 }
-.atg-bar input[type="search"],
-.atg-bar input[type="text"] {
-  flex: 1 1 120px;
-  min-width: 72px;
-  background: #1c1c1e;
-  color: #eee;
-  border: 1px solid #111;
-  border-radius: 6px;
-  height: 26px;
-  padding: 0 8px;
-  font-size: 12px;
+.atg-row-top {
+  padding: 7px 8px 4px;
 }
-.atg-path {
-  flex: 1 1 200px;
+.atg-row-path {
+  padding: 0 8px 8px;
 }
-.atg-bar button,
+.atg-tabs {
+  display: flex;
+  gap: 3px;
+  flex: 0 0 auto;
+}
 .atg-tab {
-  height: 26px;
-  padding: 0 9px;
-  border: 1px solid #141414;
-  background: #3a3a3d;
-  color: #d4d4d8;
-  border-radius: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: #9a9aa0;
+  border-radius: 5px;
   cursor: pointer;
   font-size: 12px;
 }
-.atg-bar button:hover,
 .atg-tab:hover {
-  background: #46464a;
-  color: #fff;
+  color: #eee;
+  background: rgb(255 255 255 / 0.06);
 }
-.atg-tab.on,
-.atg-bar button.primary {
+.atg-tab.on {
   background: #2f6feb;
-  border-color: #1d4fc4;
   color: #fff;
 }
 .atg-count {
-  font-size: 10px;
-  color: #8b8b90;
   margin-left: auto;
+  font-size: 11px;
+  color: #7d7d84;
+  white-space: nowrap;
+  padding-left: 8px;
+}
+.atg-path-wrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  background: #1a1a1c;
+  border: 1px solid #121214;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.atg-path-wrap .atg-path {
+  flex: 1;
+  min-width: 0;
+  height: 26px;
+  border: 0;
+  background: transparent;
+  color: #ddd;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: ui-monospace, Consolas, monospace;
+}
+.atg-path-wrap .atg-path:focus {
+  outline: none;
+}
+.atg-search {
+  width: 104px;
+  flex: 0 0 104px;
+  height: 26px;
+  border: 1px solid #121214;
+  background: #1a1a1c;
+  color: #ddd;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 12px;
+}
+.atg-tool {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  border: 0;
+  border-radius: 6px;
+  background: #3a3a3e;
+  color: #ddd;
+  cursor: pointer;
+  position: relative;
+}
+.atg-tool svg {
+  display: block;
+  pointer-events: none;
+}
+.atg-tool:hover,
+.atg-tool.primary:hover {
+  background: #2f6feb;
+  color: #fff;
+}
+.atg-tool.primary {
+  background: #355fc4;
+  color: #fff;
+}
+.atg-tool[data-tip]:hover::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: #111;
+  color: #eee;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 20;
+  pointer-events: none;
 }
 .atg-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 6px;
   padding: 8px;
-  max-height: 380px;
+  flex: 1 1 auto;
+  min-height: 220px;
+  max-height: 360px;
   overflow: auto;
 }
 .atg-grid::-webkit-scrollbar {
-  width: 8px;
+  width: 7px;
 }
 .atg-grid::-webkit-scrollbar-thumb {
-  background: #3f3f44;
+  background: #3a3a40;
   border-radius: 8px;
 }
 .atg-card,
@@ -78,36 +157,38 @@
   position: relative;
   aspect-ratio: 1;
   background: #1a1a1c;
-  border-radius: 8px;
+  border-radius: 7px;
   overflow: hidden;
   cursor: pointer;
-  border: 1px solid rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.05);
   color: inherit;
   padding: 0;
   text-align: left;
+  min-width: 0;
 }
 .atg-card:hover,
 .atg-folder:hover {
-  border-color: rgb(255 255 255 / 0.14);
+  border-color: rgb(255 255 255 / 0.16);
 }
 .atg-folder {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: #222226;
+  gap: 6px;
+  background: #1f1f23;
 }
 .atg-folder svg {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   color: #d4a017;
+  flex: 0 0 auto;
 }
 .atg-folder .lab {
-  width: 90%;
+  width: calc(100% - 10px);
   text-align: center;
-  font-size: 11px;
-  color: #c8c8cc;
+  font-size: 10px;
+  color: #c4c4c8;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -117,10 +198,10 @@
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 16px 6px 5px;
+  padding: 14px 5px 4px;
   font-size: 10px;
   color: #fff;
-  background: linear-gradient(transparent, rgb(0 0 0 / 0.78));
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.82));
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -133,17 +214,16 @@
   display: block;
 }
 .atg-card.sel {
-  outline: 2px solid #c9a227;
-  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px #c9a227;
 }
 .atg-actions {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 4px;
+  right: 4px;
   display: flex;
   gap: 3px;
   opacity: 0;
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   transition:
     opacity 140ms ease,
     transform 140ms ease;
@@ -155,13 +235,13 @@
   transform: none;
 }
 .atg-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 5px;
-  background: rgb(10 10 12 / 0.72);
+  border-radius: 4px;
+  background: rgb(10 10 12 / 0.74);
   color: #f4f4f5;
   cursor: pointer;
   backdrop-filter: blur(8px);
@@ -178,9 +258,9 @@
 .atg-icon[data-tip]:hover::after {
   content: attr(data-tip);
   position: absolute;
-  top: calc(100% + 5px);
+  top: calc(100% + 4px);
   right: 0;
-  padding: 3px 7px;
+  padding: 3px 6px;
   border-radius: 4px;
   background: #111;
   color: #eee;
@@ -192,22 +272,24 @@
   pointer-events: none;
 }
 .atg-empty {
-  padding: 32px 12px;
+  padding: 28px 10px;
   text-align: center;
   color: #8b8b90;
   font-size: 12px;
   grid-column: 1 / -1;
 }
 .atg-vault {
-  max-height: 380px;
+  flex: 1 1 auto;
+  min-height: 220px;
+  max-height: 360px;
   overflow: auto;
   padding: 8px;
 }
 .atg-vault-item {
   background: #1c1c1f;
   border: 1px solid rgb(255 255 255 / 0.04);
-  border-radius: 8px;
-  padding: 9px 10px;
+  border-radius: 7px;
+  padding: 8px 9px;
   margin-bottom: 6px;
 }
 .atg-vault-item p {
@@ -221,17 +303,29 @@
 }
 .atg-vault-item header {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 4px;
   font-size: 12px;
+}
+.atg-vault-item header strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.atg-vault-item header span {
+  display: flex;
+  gap: 4px;
+  flex: 0 0 auto;
 }
 .atg-vault-item header button {
   height: 22px;
   padding: 0 8px;
   border: 0;
   border-radius: 5px;
-  background: #333;
+  background: #333338;
   color: #ddd;
   cursor: pointer;
   font-size: 11px;
@@ -249,11 +343,12 @@
 }
 .atg-lb-box {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 360px);
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 16px;
-  max-width: 1100px;
+  max-width: 1080px;
   width: 100%;
   max-height: 100%;
+  min-width: 0;
 }
 .atg-lb-box img {
   max-width: 100%;
@@ -266,26 +361,28 @@
 .atg-lb-meta {
   background: #242428;
   color: #ddd;
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 10px;
+  padding: 14px;
   overflow: auto;
+  min-width: 0;
   border: 1px solid rgb(255 255 255 / 0.06);
 }
 .atg-lb-meta pre,
 .atg-lb-meta textarea {
   width: 100%;
-  min-height: 72px;
+  min-height: 68px;
   background: #17171a;
   color: #ddd;
   border: 1px solid #111;
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 8px;
   font: 12px/1.45 ui-monospace, monospace;
   white-space: pre-wrap;
+  box-sizing: border-box;
 }
 .atg-lb-meta h3 {
-  margin: 0 0 8px;
-  font-size: 15px;
+  margin: 0 0 6px;
+  font-size: 14px;
   word-break: break-all;
   font-weight: 600;
 }
@@ -297,8 +394,8 @@
 }
 .atg-lb-actions button,
 .atg-lb-close {
-  height: 30px;
-  padding: 0 12px;
+  height: 28px;
+  padding: 0 11px;
   border: 0;
   border-radius: 6px;
   background: #2f6feb;
@@ -313,9 +410,6 @@
 @media (max-width: 800px) {
   .atg-lb-box {
     grid-template-columns: 1fr;
-  }
-  .atg-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 @media (hover: none) {
