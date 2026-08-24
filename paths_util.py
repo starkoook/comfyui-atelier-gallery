@@ -1,24 +1,58 @@
+# -*- coding: utf-8 -*-
 import os
+import string
 
 import folder_paths
 
 from .metadata import is_image_name
 
-MAX_LIST = 500
+MAX_LIST = 400
 
 
-def source_root(source: str, custom_folder: str = "") -> str:
-    source = (source or "output").lower()
-    if source == "input":
-        return os.path.abspath(folder_paths.get_input_directory())
-    if source == "temp":
-        return os.path.abspath(folder_paths.get_temp_directory())
-    if source == "custom":
-        folder = (custom_folder or "").strip()
-        if not folder:
-            raise ValueError("custom 目录为空")
-        return os.path.abspath(folder)
-    return os.path.abspath(folder_paths.get_output_directory())
+def _drives():
+    if os.name != "nt":
+        return ["/"]
+    found = []
+    try:
+        import ctypes
+
+        bitmask = ctypes.windll.kernel32.GetLogicalDrives()
+        for i, letter in enumerate(string.ascii_uppercase):
+            if bitmask & (1 << i):
+                found.append(f"{letter}:\\")
+    except Exception:
+        for letter in string.ascii_uppercase:
+            root = f"{letter}:\\"
+            if os.path.isdir(root):
+                found.append(root)
+    return found or ["C:\\"]
+
+
+def list_roots():
+    items = []
+    seen = set()
+
+    def add(label, path):
+        path = os.path.abspath(path) if path else ""
+        if not path or path in seen or not os.path.isdir(path):
+            return
+        seen.add(path)
+        items.append({"name": label, "path": path, "kind": "root"})
+
+    try:
+        add("output", folder_paths.get_output_directory())
+        add("input", folder_paths.get_input_directory())
+        add("temp", folder_paths.get_temp_directory())
+    except Exception:
+        pass
+    add("home", os.path.expanduser("~"))
+    desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+    add("Desktop", desktop)
+    pictures = os.path.join(os.path.expanduser("~"), "Pictures")
+    add("Pictures", pictures)
+    for drive in _drives():
+        add(drive, drive)
+    return items
 
 
 def is_within(root: str, path: str) -> bool:
@@ -30,69 +64,84 @@ def is_within(root: str, path: str) -> bool:
         return False
 
 
-def resolve_image(source: str, filename: str, subfolder: str = "", custom_folder: str = "") -> str:
+def parent_dir(path: str):
+    path = os.path.abspath(path)
+    parent = os.path.dirname(path.rstrip("\\/"))
+    if os.name == "nt":
+        if path.endswith(":\\") or path.endswith(":/"):
+            return None
+        if parent == path:
+            return None
+    else:
+        if path == "/":
+            return None
+    return parent
+
+
+def resolve_image(folder: str, filename: str) -> str:
     filename = os.path.basename((filename or "").replace("\\", "/"))
     if not filename:
-        raise ValueError("未选择图片")
-    sub = (subfolder or "").replace("\\", "/").strip("/")
-    if any(part == ".." for part in sub.split("/") if part):
-        raise ValueError("非法子目录")
-    root = source_root(source, custom_folder)
-    if not os.path.isdir(root):
-        raise ValueError(f"目录不存在: {root}")
-    path = os.path.join(root, sub, filename) if sub else os.path.join(root, filename)
-    path = os.path.abspath(path)
-    if not is_within(root, path):
-        raise ValueError("路径超出允许目录")
+        raise ValueError("No image selected")
+    folder = os.path.abspath((folder or "").strip())
+    if not os.path.isdir(folder):
+        raise ValueError(f"Folder not found: {folder}")
+    path = os.path.abspath(os.path.join(folder, filename))
+    if not is_within(folder, path):
+        raise ValueError("Path escapes folder")
     if not os.path.isfile(path):
         raise FileNotFoundError(path)
     return path
 
 
-def list_images(source: str, subfolder: str = "", custom_folder: str = "", query: str = ""):
-    root = source_root(source, custom_folder)
-    sub = (subfolder or "").replace("\\", "/").strip("/")
-    if any(part == ".." for part in sub.split("/") if part):
-        raise ValueError("非法子目录")
-    base = os.path.join(root, sub) if sub else root
-    base = os.path.abspath(base)
-    if not is_within(root, base) and base != root:
-        raise ValueError("路径超出允许目录")
-    if not os.path.isdir(base):
-        return []
+def browse(path: str, query: str = ""):
+    path = (path or "").strip()
+    if not path:
+        return {"cwd": "", "parent": None, "folders": list_roots(), "images": []}
+
+    cwd = os.path.abspath(path)
+    if not os.path.isdir(cwd):
+        raise ValueError(f"Folder not found: {cwd}")
 
     q = (query or "").strip().lower()
-    found: list[dict] = []
-    for dirpath, dirnames, filenames in os.walk(base):
-        dirnames[:] = [d for d in dirnames if not d.startswith(".")]
-        rel_dir = os.path.relpath(dirpath, root)
-        if rel_dir == ".":
-            rel_dir = ""
-        for name in filenames:
-            if name.startswith("."):
-                continue
-            if not is_image_name(name):
-                continue
-            if q and q not in name.lower() and q not in rel_dir.replace("\\", "/").lower():
-                continue
-            full = os.path.join(dirpath, name)
-            try:
+    folders = []
+    images = []
+    try:
+        names = os.listdir(cwd)
+    except OSError as exc:
+        raise ValueError(str(exc)) from exc
+
+    for name in names:
+        if name.startswith("."):
+            continue
+        if q and q not in name.lower():
+            continue
+        full = os.path.join(cwd, name)
+        try:
+            if os.path.isdir(full):
+                folders.append({"name": name, "path": os.path.abspath(full), "kind": "folder"})
+            elif os.path.isfile(full) and is_image_name(name):
                 st = os.stat(full)
-            except OSError:
-                continue
-            found.append(
-                {
-                    "filename": name,
-                    "subfolder": rel_dir.replace("\\", "/"),
-                    "source": source,
-                    "mtime": st.st_mtime,
-                    "size": st.st_size,
-                }
-            )
-        if len(found) >= MAX_LIST:
+                images.append(
+                    {
+                        "filename": name,
+                        "folder": cwd,
+                        "mtime": st.st_mtime,
+                        "size": st.st_size,
+                    }
+                )
+        except OSError:
+            continue
+        if len(folders) + len(images) >= MAX_LIST:
             break
-    found.sort(key=lambda x: x["mtime"], reverse=True)
-    return found[:MAX_LIST]
+
+    folders.sort(key=lambda x: x["name"].lower())
+    images.sort(key=lambda x: x["mtime"], reverse=True)
+    return {
+        "cwd": cwd,
+        "parent": parent_dir(cwd),
+        "folders": folders,
+        "images": images[:MAX_LIST],
+    }
 
 
 def user_dir() -> str:

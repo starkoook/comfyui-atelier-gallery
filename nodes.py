@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 
@@ -40,53 +41,49 @@ class AtelierGallery:
     RETURN_TYPES = ("IMAGE", "MASK", "STRING", "STRING", "STRING")
     RETURN_NAMES = ("image", "mask", "prompt", "negative", "metadata")
     FUNCTION = "load"
-    DESCRIPTION = "画廊浏览本地图，读取提示词与原信息，输出当前选中的图片。"
+    DESCRIPTION = "Browse local folders, read prompt/EXIF, output the selected image."
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "source": (["output", "input", "temp", "custom"], {"default": "output"}),
+                "folder": ("STRING", {"default": "", "multiline": False}),
                 "filename": ("STRING", {"default": "", "multiline": False}),
-                "subfolder": ("STRING", {"default": ""}),
-                "custom_folder": (
-                    "STRING",
-                    {
-                        "default": "",
-                        "multiline": False,
-                        "placeholder": "仅 source=custom 时使用的绝对路径",
-                    },
-                ),
             }
         }
 
     @classmethod
-    def IS_CHANGED(cls, source="output", filename="", subfolder="", custom_folder="", **_kwargs):
+    def IS_CHANGED(cls, folder="", filename="", **_kwargs):
         if not filename:
             return ""
         try:
-            path = resolve_image(source, filename, subfolder, custom_folder)
+            path = resolve_image(folder, filename)
             return f"{path}:{os.path.getmtime(path)}"
         except Exception:
             return filename
 
     @classmethod
-    def VALIDATE_INPUTS(cls, source="output", filename="", subfolder="", custom_folder="", **_kwargs):
+    def VALIDATE_INPUTS(cls, folder="", filename="", **_kwargs):
         if not filename:
-            return "请在图库中点选一张图片"
+            return "Select an image in the gallery"
         try:
-            resolve_image(source, filename, subfolder, custom_folder)
+            resolve_image(folder, filename)
             return True
         except Exception as exc:
             return str(exc)
 
-    def load(self, source, filename, subfolder, custom_folder):
-        path = resolve_image(source, filename, subfolder, custom_folder)
+    def load(self, folder, filename, **_kwargs):
+        # Old workflows stored path in custom_folder + subfolder
+        if not folder:
+            folder = _kwargs.get("custom_folder") or ""
+            sub = _kwargs.get("subfolder") or ""
+            if sub:
+                folder = os.path.join(folder, sub) if folder else sub
+        path = resolve_image(folder, filename)
         image, mask = _load_tensors(path)
         meta = read_metadata(path)
         meta["filename"] = filename
-        meta["subfolder"] = subfolder
-        meta["source"] = source
+        meta["folder"] = folder
         meta["path"] = path
         prompt = meta.get("prompt") or ""
         negative = meta.get("negative") or ""
@@ -98,7 +95,7 @@ class AtelierPromptVault:
     RETURN_TYPES = ("STRING", "STRING")
     RETURN_NAMES = ("prompt", "negative")
     FUNCTION = "pick"
-    DESCRIPTION = "读取 Atelier 提示词库中保存的条目。"
+    DESCRIPTION = "Load a saved prompt from the Atelier vault."
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -116,20 +113,16 @@ class AtelierPromptVault:
                     ] or titles
         except Exception:
             pass
-        return {
-            "required": {
-                "entry": (titles,),
-            }
-        }
+        return {"required": {"entry": (titles,)}}
 
     @classmethod
-    def IS_CHANGED(cls, entry):
+    def IS_CHANGED(cls, entry="", **_kwargs):
         path = vault_path()
         if os.path.isfile(path):
             return f"{entry}:{os.path.getmtime(path)}"
         return entry
 
-    def pick(self, entry):
+    def pick(self, entry, **_kwargs):
         if not entry or entry == "(empty)":
             return ("", "")
         try:

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 import time
@@ -6,7 +7,7 @@ import uuid
 from aiohttp import web
 
 from .metadata import read_metadata
-from .paths_util import list_images, resolve_image, vault_path
+from .paths_util import browse, resolve_image, vault_path
 
 try:
     from server import PromptServer
@@ -25,41 +26,34 @@ def _bind(path, handler, method="GET"):
         getattr(ROUTES, method.lower())("/api" + path)(handler)
 
 
-async def gallery_list(request):
-    source = request.rel_url.query.get("source", "output")
-    subfolder = request.rel_url.query.get("subfolder", "")
-    custom_folder = request.rel_url.query.get("custom_folder", "")
+async def gallery_browse(request):
+    path = request.rel_url.query.get("path", "")
     query = request.rel_url.query.get("q", "")
     try:
-        items = list_images(source, subfolder, custom_folder, query)
-        return web.json_response({"images": items, "count": len(items)})
+        data = browse(path, query)
+        return web.json_response(data)
     except Exception as exc:
-        return web.json_response({"error": str(exc), "images": []}, status=400)
+        return web.json_response({"error": str(exc), "cwd": path, "folders": [], "images": []}, status=400)
 
 
 async def gallery_meta(request):
-    source = request.rel_url.query.get("source", "output")
+    folder = request.rel_url.query.get("folder", "")
     filename = request.rel_url.query.get("filename", "")
-    subfolder = request.rel_url.query.get("subfolder", "")
-    custom_folder = request.rel_url.query.get("custom_folder", "")
     try:
-        path = resolve_image(source, filename, subfolder, custom_folder)
+        path = resolve_image(folder, filename)
         meta = read_metadata(path)
         meta["filename"] = filename
-        meta["subfolder"] = subfolder
-        meta["source"] = source
+        meta["folder"] = folder
         return web.json_response(meta)
     except Exception as exc:
         return web.json_response({"error": str(exc)}, status=400)
 
 
 async def gallery_file(request):
-    source = request.rel_url.query.get("source", "output")
+    folder = request.rel_url.query.get("folder", "")
     filename = request.rel_url.query.get("filename", "")
-    subfolder = request.rel_url.query.get("subfolder", "")
-    custom_folder = request.rel_url.query.get("custom_folder", "")
     try:
-        path = resolve_image(source, filename, subfolder, custom_folder)
+        path = resolve_image(folder, filename)
         return web.FileResponse(path)
     except Exception as exc:
         return web.json_response({"error": str(exc)}, status=400)
@@ -93,14 +87,14 @@ async def prompts_post(request):
         return web.json_response({"error": "invalid json"}, status=400)
     title = str(body.get("title") or "untitled").strip()
     prompt = str(body.get("prompt") or "").strip()
-    if not prompt:
-        return web.json_response({"error": "prompt 为空"}, status=400)
+    negative = str(body.get("negative") or "").strip()
+    if not prompt and not negative:
+        return web.json_response({"error": "empty prompt"}, status=400)
     item = {
         "id": uuid.uuid4().hex[:12],
         "title": title,
         "prompt": prompt,
-        "negative": str(body.get("negative") or ""),
-        "source": body.get("source") or "",
+        "negative": negative,
         "filename": body.get("filename") or "",
         "createdAt": int(time.time() * 1000),
     }
@@ -116,7 +110,8 @@ async def prompts_delete(request):
     return web.json_response({"ok": True})
 
 
-_bind("/atelier/gallery", gallery_list)
+_bind("/atelier/browse", gallery_browse)
+_bind("/atelier/gallery", gallery_browse)
 _bind("/atelier/metadata", gallery_meta)
 _bind("/atelier/file", gallery_file)
 _bind("/atelier/prompts", prompts_get)
