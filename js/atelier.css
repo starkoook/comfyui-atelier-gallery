@@ -1,0 +1,217 @@
+.atg-root {
+  font-family: Inter, Segoe UI, system-ui, sans-serif;
+  color: #ddd;
+  background: #2a2a2a;
+  border: 1px solid #111;
+  border-radius: 6px;
+  overflow: hidden;
+  min-width: 360px;
+}
+.atg-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 8px;
+  background: #222;
+  border-bottom: 1px solid #111;
+}
+.atg-bar input[type="search"],
+.atg-bar input[type="text"] {
+  flex: 1 1 140px;
+  min-width: 100px;
+  background: #1a1a1a;
+  color: #eee;
+  border: 1px solid #111;
+  border-radius: 4px;
+  height: 28px;
+  padding: 0 8px;
+}
+.atg-bar button,
+.atg-tab {
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #111;
+  background: #333;
+  color: #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.atg-tab.on,
+.atg-bar button.primary {
+  background: #2a6edb;
+  color: #fff;
+}
+.atg-count {
+  font-size: 11px;
+  color: #888;
+  margin-left: auto;
+}
+.atg-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  max-height: 360px;
+  overflow: auto;
+}
+.atg-card {
+  position: relative;
+  aspect-ratio: 1;
+  background: #1a1a1a;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+.atg-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.atg-card.sel {
+  outline: 2px solid #c9a227;
+  outline-offset: -2px;
+}
+.atg-card .name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 4px 3px;
+  font-size: 10px;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+.atg-actions {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: none;
+  gap: 3px;
+}
+.atg-card:hover .atg-actions {
+  display: flex;
+}
+.atg-actions button {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 4px;
+  background: rgba(20, 20, 20, 0.8);
+  color: #fff;
+  cursor: pointer;
+}
+.atg-empty {
+  padding: 28px 12px;
+  text-align: center;
+  color: #888;
+  font-size: 12px;
+}
+.atg-vault {
+  max-height: 360px;
+  overflow: auto;
+  padding: 8px;
+}
+.atg-vault-item {
+  background: #1a1a1a;
+  border-radius: 4px;
+  padding: 8px;
+  margin-bottom: 6px;
+}
+.atg-vault-item p {
+  margin: 0;
+  font-size: 11px;
+  color: #aaa;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.atg-vault-item header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.atg-lb {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(0, 0, 0, 0.78);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 24px;
+}
+.atg-lb-box {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 360px);
+  gap: 16px;
+  max-width: 1100px;
+  width: 100%;
+  max-height: 100%;
+}
+.atg-lb-box img {
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  object-fit: contain;
+  margin: auto;
+  display: block;
+}
+.atg-lb-meta {
+  background: #242424;
+  color: #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  overflow: auto;
+}
+.atg-lb-meta pre,
+.atg-lb-meta textarea {
+  width: 100%;
+  min-height: 88px;
+  background: #1a1a1a;
+  color: #ddd;
+  border: 1px solid #111;
+  border-radius: 4px;
+  padding: 8px;
+  font: 12px/1.45 ui-monospace, monospace;
+  white-space: pre-wrap;
+}
+.atg-lb-meta h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+.atg-lb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.atg-lb-actions button,
+.atg-lb-close {
+  height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #2a6edb;
+  color: #fff;
+  cursor: pointer;
+}
+.atg-lb-close {
+  background: #444;
+  margin-bottom: 10px;
+}
+@media (max-width: 800px) {
+  .atg-lb-box {
+    grid-template-columns: 1fr;
+  }
+  .atg-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

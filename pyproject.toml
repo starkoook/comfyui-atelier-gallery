@@ -1,0 +1,11 @@
+[project]
+name = "comfyui-atelier-gallery"
+version = "1.0.0"
+description = "ComfyUI 图库节点：浏览 input/output 本地图，读取原信息与提示词，悬停复制，点击预览，输出 IMAGE / PROMPT。"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+
+[tool.comfy]
+PublisherId = "atelier"
+DisplayName = "Atelier Gallery"
+requires-comfyui = ">=0.3.0"
