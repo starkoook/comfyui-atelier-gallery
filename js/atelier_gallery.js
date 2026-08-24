@@ -2,6 +2,18 @@ import { app } from "../../scripts/app.js";
 
 const CSS_URL = new URL("./atelier.css", import.meta.url);
 
+const TIP_COPY = "\u590d\u5236\u63d0\u793a\u8bcd";
+const TIP_SAVE = "\u5b58\u5165\u63d0\u793a\u8bcd\u5e93";
+const TIP_COPY_NEG = "\u590d\u5236\u8d1f\u5411";
+
+const ICO_COPY =
+  '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5.2" y="5.2" width="8" height="8" rx="1.6"/><path d="M3.4 10.2V4.2A1.6 1.6 0 0 1 5 2.6h6"/></svg>';
+const ICO_SAVE =
+  '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2.6h8v11.2L8 11.2 4 13.8V2.6z"/></svg>';
+const ICO_FOLDER =
+  '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.5 6.5A2.5 2.5 0 0 1 6 4h4.1l1.6 1.8H18a2.5 2.5 0 0 1 2.5 2.5v9.2A2.5 2.5 0 0 1 18 20.5H6A2.5 2.5 0 0 1 3.5 18V6.5z"/></svg>';
+
+
 function ensureCss() {
   if (document.getElementById("atelier-gallery-css")) return;
   const link = document.createElement("link");
@@ -109,12 +121,10 @@ function openLightbox(node, item, meta) {
     </div>`;
   wrap.querySelector(".atg-lb-close").onclick = closeLightbox;
   wrap.querySelector('[data-act="copy-p"]').onclick = async () => {
-    if (!prompt) return toast("No prompt on this image");
-    toast((await copyText(prompt)) ? "Prompt copied" : "Copy failed");
+    if (prompt) await copyText(prompt);
   };
   wrap.querySelector('[data-act="copy-n"]').onclick = async () => {
-    if (!negative) return toast("No negative prompt");
-    toast((await copyText(negative)) ? "Negative copied" : "Copy failed");
+    if (negative) await copyText(negative);
   };
   wrap.querySelector('[data-act="save"]').onclick = () => savePrompt(item, meta);
   document.body.appendChild(wrap);
@@ -189,7 +199,7 @@ function renderBrowse(node, data) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "atg-folder";
-    btn.innerHTML = `<span class="ico">[]</span><span class="lab">${esc(folder.name)}</span>`;
+    btn.innerHTML = `${ICO_FOLDER}<span class="lab">${esc(folder.name)}</span>`;
     btn.onclick = () => goPath(node, folder.path);
     grid.appendChild(btn);
   }
@@ -201,18 +211,17 @@ function renderBrowse(node, data) {
       <img loading="lazy" alt="" src="${esc(thumbUrl(item.folder, item.filename))}" />
       <div class="name">${esc(item.filename)}</div>
       <div class="atg-actions">
-        <button type="button" title="Copy prompt" data-act="copy">C</button>
-        <button type="button" title="Save" data-act="save">S</button>
+        <button type="button" class="atg-icon" data-act="copy" data-tip="${TIP_COPY}" aria-label="${TIP_COPY}">${ICO_COPY}</button>
+        <button type="button" class="atg-icon" data-act="save" data-tip="${TIP_SAVE}" aria-label="${TIP_SAVE}">${ICO_SAVE}</button>
       </div>`;
     card.addEventListener("click", (e) => {
-      const act = e.target?.dataset?.act;
+      const act = e.target.closest("[data-act]")?.dataset?.act;
       if (act === "copy" || act === "save") {
         e.stopPropagation();
         selectImage(node, item, false).then(async (meta) => {
           if (act === "copy") {
             const text = meta.prompt || meta.negative || "";
-            if (!text) return toast("No prompt");
-            toast((await copyText(text)) ? "Copied" : "Copy failed");
+            if (text) await copyText(text);
           } else savePrompt(item, meta);
         });
         return;
@@ -264,7 +273,7 @@ async function loadVault(node) {
       const item = items[i];
       el.querySelector('[data-act="copy"]').onclick = async () => {
         const text = item.prompt || item.negative || "";
-        toast((await copyText(text)) ? "Copied" : "Copy failed");
+        if (text) await copyText(text);
       };
       el.querySelector('[data-act="del"]').onclick = async () => {
         await fetch(`/atelier/prompts?id=${encodeURIComponent(item.id)}`, { method: "DELETE" });
